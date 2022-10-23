@@ -6,13 +6,21 @@ generator client {
 }
 
 datasource db {
-    provider = "postgres"
+    provider = "postgresql"
     //url      = "file:db.sqlite"
-    url      = "postgres://postgres:postgres@localhost:5432/postgres?synchronize=true"
+    //url      = "postgres://postgres:Kq64s866tFwrX6Sx@db.ufzgiaxdirzioduprfxy.supabase.co:5432/postgres"
+    url      = "postgres://postgres:postgres@localhost:5432/postgres"
+    //url      = "mysql://30pfnqibww2a:pscale_pw_f-B2PNUdqqzr99VKQL3KEfXLQ0J4iFJ1vaUc6FTotZk@1y5gfux149se.eu-central-1.psdb.cloud/metanet?sslaccept=strict"
 }
 
 model Example {
     id String @id @default(cuid())
+}
+
+enum Role {
+    ADMIN
+    USER
+    VENDOR
 }
 
 // Necessary for Next auth
@@ -50,6 +58,18 @@ model User {
     image         String?
     accounts      Account[]
     sessions      Session[]
+    roles         Role[] @default([USER])
+    preferences   UserPreference?
+    Products      Product[] @relation("MyProducts")
+    @@index([email])
+}
+
+model UserPreference {
+    id String @id @default(cuid())
+    userId String @unique
+    user User @relation(fields: [userId], references: [id])
+    key String
+    value String
 }
 
 model VerificationToken {
@@ -59,3 +79,28 @@ model VerificationToken {
 
     @@unique([identifier, token])
 }
+
+model Product {
+    id String @id @default(cuid())
+    title String
+    price Int
+    description String
+    image String
+    averageRating Float
+    userId String
+    user User @relation("MyProducts", fields: [userId], references: [id], onDelete: Cascade)
+    categories Category[]
+    updatedAt DateTime @updatedAt
+    createdAt DateTime @default(now())
+}
+
+model Category {
+    id Int @id @default(autoincrement())
+    name String
+    parentId Int?
+    parentCategory  Category?  @relation("subCategories", fields: [parentId], references: [id])
+    subCategories Category[] @relation(name: "subCategories")
+    products Product[]
+    @@map("category")
+}
+
